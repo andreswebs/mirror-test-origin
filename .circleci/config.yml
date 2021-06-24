@@ -8,7 +8,14 @@ jobs:
           name: Mirror repository
           command: |
             WORKDIR="$(mktemp -d)"
+            git init --bare "${WORKDIR}"
             cd "${WORKDIR}"
+            git config remote.origin.url "${CIRCLE_REPOSITORY_URL}"
+            git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
+            git config --add remote.origin.fetch '+refs/tags/*:refs/tags/*'
+            git config --add remote.origin.fetch '+refs/notes/*:refs/notes/*'
+            git config remote.origin.mirror true
+            git fetch --all
             pwd
             ls -lia
 
