@@ -6,3 +6,9 @@ jobs:
     steps:
       - run: . ~/project/.circleci/git-mirror.sh
       
+workflows:
+  version: 2
+  mirror-repositories:
+    jobs:
+      - mirror-github
+      
