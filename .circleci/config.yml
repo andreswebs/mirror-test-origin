@@ -1,0 +1,8 @@
+version: 2.1
+jobs:
+  mirror-github:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: . ~/project/.circleci/git-mirror.sh
+      
