@@ -4,9 +4,13 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - run: |
-          pwd
-          ls -lia
+      - run:
+          name: Mirror repository
+          command: |
+            WORKDIR="$(mktemp -d)"
+            cd "${WORKDIR}"
+            pwd
+            ls -lia
 
 workflows:
   version: 2
