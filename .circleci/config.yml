@@ -7,6 +7,8 @@ jobs:
       - run:
           name: Mirror repository
           command: |
+            mkdir -p "${HOME}/.ssh"
+            ssh-keyscan -H github.com >> "${HOME}/.ssh/known_hosts"
             WORKDIR="$(mktemp -d)"
             git init --bare "${WORKDIR}"
             cd "${WORKDIR}"
