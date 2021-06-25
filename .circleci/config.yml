@@ -1,53 +1,76 @@
 version: 2.1
 
-jobs:
-  mirror-github:
-    docker:
-      - image: cimg/base:stable
-    parameters:
-      github-mirror-access-token:
-        description: >-
-          Set an environment variable containing a GitHub Personal Access Token
-          which has access to the target mirror repository. Pass this as a literal string
-          such as `$GITHUB_MIRROR_ACCESS_TOKEN`.
-        type: string
-      # github-mirror-url:
-      #   description: >-
-      #     URL for the target mirror repository in GitHub.
-      #   type: string
-    steps:
-      - run:
-          name: Fetch origin repository
-          command: |
-            mkdir -p "${HOME}/.ssh"
-            ssh-keyscan -H github.com >> "${HOME}/.ssh/known_hosts"
-            git init --bare
-            git config remote.origin.url "${CIRCLE_REPOSITORY_URL}"
-            git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
-            git config --add remote.origin.fetch '+refs/tags/*:refs/tags/*'
-            git config --add remote.origin.fetch '+refs/notes/*:refs/notes/*'
-            git config remote.origin.mirror true
-            git fetch --all
-      # - run:
-      #     name: Set HTTPS connection
-      #     command: |
-      #       git config --global url."https://github.com/".insteadOf "git@github.com:"
-      - run:
-          name: Set mirror credentials
-          command: |
-            touch "${HOME}/.netrc"
-            chmod 0600 "${HOME}/.netrc"
-            echo "machine github.com login << parameters.github-mirror-access-token >>" > "${HOME}/.netrc"
+orbs:
+  github-mirror:
 
-      - run:
-          name: Push to mirror repository
-          command: |
-            git push --mirror --prune "${GITHUB_MIRROR_URL}"
+    executors:
+      default:
+        parameters:
+          image-tag:
+            description: >-
+              The `cimg/base` image tag to use. Defaults to `stable`.
+            type: string
+            default: stable
+        docker:
+          - image: cimg/base:<< parameters.image-tag >>
+
+    jobs:
+      mirror-repository:
+
+        parameters:
+          executor-image-tag:
+            description: >-
+              Image tag for the default executor.
+            type: string
+            default: stable
+          github-mirror-access-token:
+            description: >-
+              Env var containing a GitHub Personal Access Token
+              which has access to the target mirror repository.
+              Defaults to `GITHUB_MIRROR_ACCESS_TOKEN`.
+            type: env_var_name
+            default: GITHUB_MIRROR_ACCESS_TOKEN
+          github-mirror-url:
+            description: >-
+              Env var containing the URL for the target mirror repository in GitHub.
+              Defaults to `GITHUB_MIRROR_URL`.
+            type: env_var_name
+            default: GITHUB_MIRROR_URL
+
+        executor:
+          name: default
+          image-tag: << parameters.executor-image-tag >>
+
+        steps:
+
+          - run:
+              name: Fetch origin repository
+              command: |
+                mkdir -p "${HOME}/.ssh"
+                ssh-keyscan -H github.com >> "${HOME}/.ssh/known_hosts"
+                git init --bare
+                git config remote.origin.url "${CIRCLE_REPOSITORY_URL}"
+                git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
+                git config --add remote.origin.fetch '+refs/tags/*:refs/tags/*'
+                git config --add remote.origin.fetch '+refs/notes/*:refs/notes/*'
+                git config remote.origin.mirror true
+                git fetch --all
+
+          - run:
+              name: Set mirror credentials
+              command: |
+                touch "${HOME}/.netrc"
+                chmod 0600 "${HOME}/.netrc"
+                echo "machine github.com login ${<< parameters.github-mirror-access-token} >>" > "${HOME}/.netrc"
+
+          - run:
+              name: Push to mirror repository
+              command: |
+                git push --mirror --prune "${<< parameters.github-mirror-url >>}"
 
 workflows:
   version: 2
   mirror-repositories:
     jobs:
-      - mirror-github:
-          github-mirror-access-token: "${GITHUB_MIRROR_ACCESS_TOKEN}"
+      - github-mirror/mirror-repository
 
