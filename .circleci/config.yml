@@ -21,9 +21,7 @@ jobs:
           command: |
             mkdir -p "${HOME}/.ssh"
             ssh-keyscan -H github.com >> "${HOME}/.ssh/known_hosts"
-            WORKDIR="$(mktemp -d)"
-            git init --bare "${WORKDIR}"
-            cd "${WORKDIR}"
+            git init --bare
             git config remote.origin.url "${CIRCLE_REPOSITORY_URL}"
             git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
             git config --add remote.origin.fetch '+refs/tags/*:refs/tags/*'
